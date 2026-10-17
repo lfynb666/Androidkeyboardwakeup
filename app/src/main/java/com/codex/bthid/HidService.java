@@ -34,6 +34,7 @@ public final class HidService extends Service {
     public static final String ACTION_STATUS = "com.codex.bthid.STATUS";
     public static final String ACTION_CONNECT = "com.codex.bthid.CONNECT";
     public static final String ACTION_SPACE = "com.codex.bthid.SPACE";
+    public static final String ACTION_SLEEP = "com.codex.bthid.SLEEP";
     public static final String EXTRA_ADDRESS = "address";
     public static final int LOCAL_PORT = 27841;
 
@@ -42,11 +43,13 @@ public final class HidService extends Service {
     private static final String CHANNEL_ID = "bluetooth_hid";
     private static final int NOTIFICATION_ID = 27841;
 
-    // Standard 8-byte boot keyboard report descriptor, with no LED output report.
+    // Keyboard report plus a Consumer Control/System Sleep report, with no LED
+    // output report. Report IDs are 1 (keyboard) and 2 (consumer control).
     private static final byte[] KEYBOARD_DESCRIPTOR = new byte[] {
             0x05, 0x01,
             0x09, 0x06,
             (byte) 0xA1, 0x01,
+            0x85, 0x01,
             0x05, 0x07,
             0x19, (byte) 0xE0,
             0x29, (byte) 0xE7,
@@ -66,12 +69,29 @@ public final class HidService extends Service {
             0x19, 0x00,
             0x29, 0x65,
             (byte) 0x81, 0x00,
+            (byte) 0xC0,
+            // Consumer Control / System Sleep. This is a system power-button
+            // event, not a character and not a session-local AHK hotkey.
+            0x05, 0x0C,
+            0x09, 0x01,
+            (byte) 0xA1, 0x01,
+            (byte) 0x85, 0x02,
+            0x15, 0x00,
+            0x25, 0x01,
+            0x75, 0x01,
+            (byte) 0x95, 0x01,
+            0x09, (byte) 0x82,
+            (byte) 0x81, 0x02,
+            (byte) 0x95, 0x07,
+            (byte) 0x81, 0x01,
             (byte) 0xC0
     };
 
     private static final byte[] SPACE_DOWN = new byte[] {
             0x00, 0x00, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x00
     };
+    private static final byte[] SYSTEM_SLEEP_DOWN = new byte[] { 0x01 };
+    private static final byte[] SYSTEM_SLEEP_UP = new byte[] { 0x00 };
     private static final byte[] ALL_KEYS_UP = new byte[8];
 
     private BluetoothAdapter adapter;
@@ -139,7 +159,8 @@ public final class HidService extends Service {
                     if (hidDevice == null) {
                         return;
                     }
-                    byte[] report = new byte[Math.min(Math.max(bufferSize, 0), 8)];
+                    int reportLength = id == 2 ? 1 : 8;
+                    byte[] report = new byte[Math.min(Math.max(bufferSize, 0), reportLength)];
                     hidDevice.replyReport(device, type, id, report);
                 }
 
@@ -189,6 +210,8 @@ public final class HidService extends Service {
                 connectToAddress(intent.getStringExtra(EXTRA_ADDRESS));
             } else if (ACTION_SPACE.equals(action)) {
                 sendSpace();
+            } else if (ACTION_SLEEP.equals(action)) {
+                sendSystemSleep();
             }
         }
         return START_STICKY;
@@ -297,15 +320,37 @@ public final class HidService extends Service {
             publishStatus("Space failed: host not connected");
             return false;
         }
-        boolean down = hidDevice.sendReport(targetDevice, 0, SPACE_DOWN);
+        boolean down = hidDevice.sendReport(targetDevice, 1, SPACE_DOWN);
         try {
             Thread.sleep(50L);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
         }
-        boolean up = hidDevice.sendReport(targetDevice, 0, ALL_KEYS_UP);
+        boolean up = hidDevice.sendReport(targetDevice, 1, ALL_KEYS_UP);
         publishStatus(down && up ? "Space sent" : "Space send failed");
+        return down && up;
+    }
+
+    private boolean sendSystemSleep() {
+        if (hidDevice == null || targetDevice == null || !appRegistered) {
+            publishStatus("Sleep failed: HID not ready");
+            return false;
+        }
+        if (hidDevice.getConnectionState(targetDevice)
+                != BluetoothProfile.STATE_CONNECTED) {
+            publishStatus("Sleep failed: host not connected");
+            return false;
+        }
+        boolean down = hidDevice.sendReport(targetDevice, 2, SYSTEM_SLEEP_DOWN);
+        try {
+            Thread.sleep(80L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+        boolean up = hidDevice.sendReport(targetDevice, 2, SYSTEM_SLEEP_UP);
+        publishStatus(down && up ? "System Sleep sent" : "System Sleep failed");
         return down && up;
     }
 
@@ -324,7 +369,14 @@ public final class HidService extends Service {
                              BufferedWriter writer = new BufferedWriter(
                                      new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
                             String command = reader.readLine();
-                            boolean ok = "SPACE".equals(command) && sendSpace();
+                            boolean ok;
+                            if ("SPACE".equals(command)) {
+                                ok = sendSpace();
+                            } else if ("SLEEP".equals(command)) {
+                                ok = sendSystemSleep();
+                            } else {
+                                ok = false;
+                            }
                             writer.write(ok ? "OK\n" : "ERR\n");
                             writer.flush();
                         }

@@ -1,13 +1,14 @@
 # Bluetooth HID keyboard PoC
 
-This project turns an Android 9 phone into a classic Bluetooth HID keyboard.
+This project turns an Android 9 phone into a Bluetooth HID keyboard and system
+sleep button.
 It intentionally does not use USB Gadget, /dev/hidg0, UDC, or any USB
 reconfiguration.
 
-The app registers a standard 8-byte boot keyboard descriptor through
-BluetoothHidDevice, keeps the registration in a foreground service, and
-listens on 127.0.0.1:27841. The Termux script sends SPACE to that local
-socket. The ECS/SSH path therefore remains:
+The app registers a keyboard report plus a Consumer Control/System Sleep report
+through BluetoothHidDevice, keeps the registration in a foreground service, and
+listens on 127.0.0.1:27841. The Termux scripts send fixed `SPACE` or `SLEEP`
+commands to that local socket. The ECS/SSH path therefore remains:
 
 ~~~text
 ECS -> SSH/Tailscale -> Termux -> localhost socket -> Bluetooth HID -> Windows
@@ -78,10 +79,29 @@ The supported invocation is:
 windows wakeup
 ~~~
 
-This sends exactly one Space press and release through the local Bluetooth HID
-service. It does not fall back to the legacy USB Gadget path. The old phone
+`windows wakeup` sends exactly one Space press and release through the local
+Bluetooth HID service. `windows sleep` sends the standard HID System Sleep
+usage (Consumer Control usage 0x82); Windows' power manager applies the
+configured Sleep Button Action. It does not use SetSuspendState, hibernation,
+or a session-local AHK hotkey, so it remains independent of a locked console
+session and a separate active RDP session. The old phone
 script name can be retained as a safe alias to the Bluetooth helper by
 installing `termux/windows-wakeup-legacy.sh` as `~/windows-wakeup.sh`.
+
+Because the HID report descriptor now includes report IDs and a Consumer
+Control collection, Windows must forget the old Bluetooth Keyboard pairing and
+pair the updated app again after installing a build containing this change.
+
+Before enabling the remote sleep action, verify on Windows:
+
+~~~bat
+powercfg /a
+powercfg /q SCHEME_CURRENT SUB_BUTTONS
+~~~
+
+The available state must include `Standby (S0 Low Power Idle)`, and the active
+scheme's Sleep Button Action must be `Sleep` (value `1`), not `Hibernate`
+(value `2`).
 
 ## Acceptance sequence
 

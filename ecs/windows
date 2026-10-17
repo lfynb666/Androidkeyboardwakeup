@@ -16,8 +16,20 @@ case "$ACTION" in
             'exec /data/data/com.termux/files/home/windows-wakeup-bt.sh'
         echo "[WINDOWS] Bluetooth HID wake key dispatched."
         ;;
+    sleep|standby)
+        echo "[WINDOWS] Sending the fixed Modern Standby trigger through Termux..."
+        ssh -T \
+            -o BatchMode=yes \
+            -o ConnectTimeout=8 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=/root/.ssh/known_hosts \
+            -p 8022 \
+            u0_a137@100.64.0.3 \
+            'exec /data/data/com.termux/files/home/windows-sleep-modern-standby.sh'
+        echo "[WINDOWS] Modern Standby trigger dispatched."
+        ;;
     *)
-        echo "Usage: windows wakeup" >&2
+        echo "Usage: windows wakeup|sleep" >&2
         exit 2
         ;;
 esac
