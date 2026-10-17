@@ -1,6 +1,7 @@
 package com.codex.wakeup;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.ViewGroup;
@@ -71,7 +72,10 @@ public final class SetupActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(SetupActivity.this, "配对成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SetupActivity.this, "配对成功，开始监测", Toast.LENGTH_SHORT).show();
+                            MonitorService.start(SetupActivity.this,
+                                    new Intent(SetupActivity.this, MonitorService.class)
+                                            .setAction(MonitorService.ACTION_START));
                             finish();
                         }
                     });

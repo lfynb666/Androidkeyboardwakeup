@@ -2,10 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_wakeup"
+        android:icon="@drawable/state_grey"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
@@ -14,7 +17,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
-            android:noHistory="true" />
+            android:noHistory="true"
+            android:theme="@style/AppTheme" />
 
         <activity
             android:name=".SetupActivity"
@@ -24,7 +28,7 @@
             android:name=".LauncherGrey"
             android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_state_grey"
+            android:icon="@drawable/state_grey"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -37,7 +41,7 @@
             android:name=".LauncherGreen"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/ic_state_green"
+            android:icon="@drawable/state_green"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -50,7 +54,7 @@
             android:name=".LauncherRed"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/ic_state_red"
+            android:icon="@drawable/state_red"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -58,5 +62,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <service
+            android:name=".MonitorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".Watchdog"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.codex.wakeup.CLEAR_ICON" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

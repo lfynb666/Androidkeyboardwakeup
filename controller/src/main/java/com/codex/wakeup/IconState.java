@@ -2,14 +2,12 @@ package com.codex.wakeup;
 
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 
+/** Launcher icon state. The monitor is the only writer; API status is the source of truth. */
 final class IconState {
     enum State { GREY, GREEN, RED }
 
-    private static final String PREFS = "controller_state";
-    private static final String STATE = "state";
     private static final String GREY_ALIAS = "com.codex.wakeup.LauncherGrey";
     private static final String GREEN_ALIAS = "com.codex.wakeup.LauncherGreen";
     private static final String RED_ALIAS = "com.codex.wakeup.LauncherRed";
@@ -17,20 +15,7 @@ final class IconState {
     private IconState() {
     }
 
-    static State read(Context context) {
-        String value = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getString(STATE, State.GREY.name());
-        try {
-            return State.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            return State.GREY;
-        }
-    }
-
     static void set(Context context, State state) {
-        SharedPreferences preferences =
-                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        preferences.edit().putString(STATE, state.name()).apply();
         PackageManager manager = context.getPackageManager();
         String enabledAlias = aliasFor(state);
         String[] aliases = {GREY_ALIAS, GREEN_ALIAS, RED_ALIAS};
