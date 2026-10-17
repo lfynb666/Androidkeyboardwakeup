@@ -70,10 +70,10 @@ public final class HidService extends Service {
             0x29, 0x65,
             (byte) 0x81, 0x00,
             (byte) 0xC0,
-            // Consumer Control / System Sleep. This is a system power-button
-            // event, not a character and not a session-local AHK hotkey.
-            0x05, 0x0C,
-            0x09, 0x01,
+            // Generic Desktop / System Control / System Sleep. System Sleep
+            // belongs to Usage Page 0x01, not Consumer Page 0x0C.
+            0x05, 0x01,
+            0x09, (byte) 0x80,
             (byte) 0xA1, 0x01,
             (byte) 0x85, 0x02,
             0x15, 0x00,
