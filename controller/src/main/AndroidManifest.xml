@@ -8,7 +8,7 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/state_grey"
+        android:icon="@drawable/ic_launcher_grey"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
@@ -28,7 +28,7 @@
             android:name=".LauncherGrey"
             android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/state_grey"
+            android:icon="@drawable/ic_launcher_grey"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -41,7 +41,7 @@
             android:name=".LauncherGreen"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/state_green"
+            android:icon="@drawable/ic_launcher_green"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -54,7 +54,7 @@
             android:name=".LauncherRed"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/state_red"
+            android:icon="@drawable/ic_launcher_red"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
