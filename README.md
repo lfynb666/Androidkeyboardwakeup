@@ -64,6 +64,25 @@ Make it executable with chmod 700. It returns a non-zero status if the
 Android HID service is not registered, the host is not connected, or the
 report send fails.
 
+## ECS command path
+
+Install `ecs/windows` on the ECS as `/usr/local/bin/windows` and make it
+executable (`chmod 755`). Install `termux/windows-wakeup-bt.sh` on the phone
+at the path above and make it executable (`chmod 700`). The ECS root account
+must be able to SSH non-interactively to `u0_a137@100.64.0.3` on port `8022`,
+and the phone host key must already be in `/root/.ssh/known_hosts`.
+
+The supported invocation is:
+
+~~~sh
+windows wakeup
+~~~
+
+This sends exactly one Space press and release through the local Bluetooth HID
+service. It does not fall back to the legacy USB Gadget path. The old phone
+script name can be retained as a safe alias to the Bluetooth helper by
+installing `termux/windows-wakeup-legacy.sh` as `~/windows-wakeup.sh`.
+
 ## Acceptance sequence
 
 1. Confirm Windows sees the phone as a Bluetooth HID keyboard.

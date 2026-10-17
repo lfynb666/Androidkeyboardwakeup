@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACTION="${1:-}"
+
+case "$ACTION" in
+    wakeup|wake)
+        echo "[WINDOWS] Sending Bluetooth HID wake key through Termux..."
+        ssh -T \
+            -o BatchMode=yes \
+            -o ConnectTimeout=8 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=/root/.ssh/known_hosts \
+            -p 8022 \
+            u0_a137@100.64.0.3 \
+            'exec /data/data/com.termux/files/home/windows-wakeup-bt.sh'
+        echo "[WINDOWS] Bluetooth HID wake key dispatched."
+        ;;
+    *)
+        echo "Usage: windows wakeup" >&2
+        exit 2
+        ;;
+esac
