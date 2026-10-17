@@ -1,0 +1,57 @@
+package com.codex.wakeup;
+
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+
+final class IconState {
+    enum State { GREY, GREEN, RED }
+
+    private static final String PREFS = "controller_state";
+    private static final String STATE = "state";
+    private static final String GREY_ALIAS = "com.codex.wakeup.LauncherGrey";
+    private static final String GREEN_ALIAS = "com.codex.wakeup.LauncherGreen";
+    private static final String RED_ALIAS = "com.codex.wakeup.LauncherRed";
+
+    private IconState() {
+    }
+
+    static State read(Context context) {
+        String value = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getString(STATE, State.GREY.name());
+        try {
+            return State.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return State.GREY;
+        }
+    }
+
+    static void set(Context context, State state) {
+        SharedPreferences preferences =
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        preferences.edit().putString(STATE, state.name()).apply();
+        PackageManager manager = context.getPackageManager();
+        String enabledAlias = aliasFor(state);
+        String[] aliases = {GREY_ALIAS, GREEN_ALIAS, RED_ALIAS};
+        for (String alias : aliases) {
+            manager.setComponentEnabledSetting(
+                    new ComponentName(context.getPackageName(), alias),
+                    alias.equals(enabledAlias)
+                            ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                            : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        }
+    }
+
+    private static String aliasFor(State state) {
+        switch (state) {
+            case GREEN:
+                return GREEN_ALIAS;
+            case RED:
+                return RED_ALIAS;
+            default:
+                return GREY_ALIAS;
+        }
+    }
+}
