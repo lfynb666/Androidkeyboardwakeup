@@ -79,7 +79,17 @@ public final class MonitorService extends Service {
     }
 
     private void monitorLoop() {
-        String token = SecureStore.readToken(this);
+        String token;
+        try {
+            token = SecureStore.readToken(this);
+        } catch (Exception ignored) {
+            monitoring = false;
+            stopRequested = true;
+            Watchdog.cancel(this);
+            IconState.set(this, IconState.State.GREY);
+            stopSelf();
+            return;
+        }
         if (token == null || token.length() == 0) {
             monitoring = false;
             stopRequested = true;
