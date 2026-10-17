@@ -91,6 +91,7 @@ public final class HidService extends Service {
                         return;
                     }
                     hidDevice = (BluetoothHidDevice) proxy;
+                    Log.i(TAG, "HID device profile connected");
                     registerHidApplication();
                 }
 
@@ -109,6 +110,8 @@ public final class HidService extends Service {
                 @Override
                 public void onAppStatusChanged(BluetoothDevice pluggedDevice, boolean registered) {
                     appRegistered = registered;
+                    Log.i(TAG, "HID application status: " + registered
+                            + (pluggedDevice == null ? "" : " device=" + pluggedDevice.getAddress()));
                     if (pluggedDevice != null) {
                         setTargetDevice(pluggedDevice);
                     }
@@ -123,6 +126,8 @@ public final class HidService extends Service {
 
                 @Override
                 public void onConnectionStateChanged(BluetoothDevice device, int state) {
+                    Log.i(TAG, "HID connection state=" + stateName(state)
+                            + " device=" + (device == null ? "null" : device.getAddress()));
                     if (state == BluetoothProfile.STATE_CONNECTED) {
                         setTargetDevice(device);
                     }
@@ -237,13 +242,27 @@ public final class HidService extends Service {
     private void loadTargetDevice() {
         String address = getSharedPreferences(PREFS, MODE_PRIVATE)
                 .getString(PREF_TARGET, null);
-        if (address == null || adapter == null) {
+        if (adapter == null) {
             return;
         }
-        try {
-            targetDevice = adapter.getRemoteDevice(address);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "Invalid stored target address", e);
+        if (address != null) {
+            try {
+                targetDevice = adapter.getRemoteDevice(address);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Invalid stored target address", e);
+            }
+        }
+        if (targetDevice == null) {
+            // On first run, prefer the paired computer named by the PoC rather than
+            // accidentally attempting to connect to a headset or speaker.
+            for (BluetoothDevice device : adapter.getBondedDevices()) {
+                String name = device.getName();
+                if (name != null && "STREET-JACK".equalsIgnoreCase(name.trim())) {
+                    setTargetDevice(device);
+                    Log.i(TAG, "Auto-selected paired HID host: " + device.getAddress());
+                    break;
+                }
+            }
         }
     }
 
@@ -255,6 +274,7 @@ public final class HidService extends Service {
         try {
             setTargetDevice(adapter.getRemoteDevice(address));
             boolean accepted = hidDevice.connect(targetDevice);
+            Log.i(TAG, "HID connect request for " + address + ": " + accepted);
             publishStatus(accepted ? "Connect request sent" : "Connect request rejected");
         } catch (IllegalArgumentException e) {
             publishStatus("Invalid Bluetooth address");
@@ -296,6 +316,7 @@ public final class HidService extends Service {
                 try {
                     serverSocket = new ServerSocket(
                             LOCAL_PORT, 1, InetAddress.getByName("127.0.0.1"));
+                    Log.i(TAG, "Local command server listening on 127.0.0.1:" + LOCAL_PORT);
                     while (!stopping) {
                         try (Socket socket = serverSocket.accept();
                              BufferedReader reader = new BufferedReader(
