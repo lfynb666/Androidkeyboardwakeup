@@ -190,7 +190,8 @@ public final class MonitorService extends Service {
                 .setContentTitle("Windows 状态监测")
                 .setContentText("正在监测 ECS 端点")
                 .setOngoing(true)
-                .setSilent(true)
+                .setDefaults(0)
+                .setSound(null)
                 .setShowWhen(false);
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(NOTIFICATION_ID, builder.build(),
