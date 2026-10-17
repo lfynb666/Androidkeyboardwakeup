@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Street-Jack Bluetooth HID</string>
+    <string name="notification_channel_name">Bluetooth HID</string>
+    <string name="notification_channel_description">Keeps the Bluetooth HID keyboard service available.</string>
+</resources>
